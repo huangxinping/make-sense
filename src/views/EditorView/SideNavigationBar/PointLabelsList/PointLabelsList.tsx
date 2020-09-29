@@ -27,7 +27,18 @@ interface IProps {
     updateActiveLabelId: (activeLabelId: string) => any;
 }
 
-const PointLabelsList: React.FC<IProps> = ({size, imageData, updateImageDataById, labelNames, updateActiveLabelNameId, activeLabelId, highlightedLabelId, updateActiveLabelId}) => {
+const PointLabelsList: React.FC<IProps> = (
+    {
+        size,
+        imageData,
+        updateImageDataById,
+        labelNames,
+        updateActiveLabelNameId,
+        activeLabelId,
+        highlightedLabelId,
+        updateActiveLabelId
+    }
+) => {
     const labelInputFieldHeight = 40;
     const listStyle: React.CSSProperties = {
         width: size.width,
@@ -92,8 +103,8 @@ const PointLabelsList: React.FC<IProps> = ({size, imageData, updateImageDataById
         >
             {imageData.labelPoints.filter((labelPoint: LabelPoint) => labelPoint.status === LabelStatus.ACCEPTED).length === 0 ?
                 <EmptyLabelList
-                    labelBefore={"Mark the first point"}
-                    labelAfter={"No labels created for this image"}
+                    labelBefore={"mark your first point"}
+                    labelAfter={"no labels created for this image yet"}
                 /> :
                 <Scrollbars>
                     <div

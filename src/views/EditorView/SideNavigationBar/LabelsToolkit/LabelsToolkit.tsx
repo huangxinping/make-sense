@@ -17,6 +17,8 @@ import PolygonLabelsList from "../PolygonLabelsList/PolygonLabelsList";
 import {ContextManager} from "../../../../logic/context/ContextManager";
 import {ContextType} from "../../../../data/enums/ContextType";
 import {EventType} from "../../../../data/enums/EventType";
+import LineLabelsList from "../LineLabelsList/LineLabelsList";
+import TagLabelsList from "../TagLabelsList/TagLabelsList";
 
 interface IProps {
     activeImageIndex:number,
@@ -45,11 +47,12 @@ class LabelsToolkit extends React.Component<IProps, IState> {
 
         this.tabs = props.projectType === ProjectType.IMAGE_RECOGNITION ?
             [
-                LabelType.NAME
+                LabelType.IMAGE_RECOGNITION
             ] :
             [
-                LabelType.RECTANGLE,
+                LabelType.RECT,
                 LabelType.POINT,
+                LabelType.LINE,
                 LabelType.POLYGON
             ];
 
@@ -131,7 +134,7 @@ class LabelsToolkit extends React.Component<IProps, IState> {
                     className={getClassName("Content")}
                     style={{height: isActive ? activeTabContentHeight : 0}}
                 >
-                    {labelType === LabelType.RECTANGLE && <RectLabelsList
+                    {labelType === LabelType.RECT && <RectLabelsList
                         size={{
                             width: size.width - 20,
                             height: activeTabContentHeight - 20
@@ -145,7 +148,21 @@ class LabelsToolkit extends React.Component<IProps, IState> {
                         }}
                         imageData={imagesData[activeImageIndex]}
                     />}
+                    {labelType === LabelType.LINE && <LineLabelsList
+                        size={{
+                            width: size.width - 20,
+                            height: activeTabContentHeight - 20
+                        }}
+                        imageData={imagesData[activeImageIndex]}
+                    />}
                     {labelType === LabelType.POLYGON && <PolygonLabelsList
+                        size={{
+                            width: size.width - 20,
+                            height: activeTabContentHeight - 20
+                        }}
+                        imageData={imagesData[activeImageIndex]}
+                    />}
+                    {labelType === LabelType.IMAGE_RECOGNITION && <TagLabelsList
                         size={{
                             width: size.width - 20,
                             height: activeTabContentHeight - 20

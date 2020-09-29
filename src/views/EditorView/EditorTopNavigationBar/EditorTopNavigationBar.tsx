@@ -4,7 +4,7 @@ import React from "react";
 import classNames from "classnames";
 import {AppState} from "../../../store";
 import {connect} from "react-redux";
-import {updateImageDragModeStatus} from "../../../store/general/actionCreators";
+import {updateCrossHairVisibleStatus, updateImageDragModeStatus} from "../../../store/general/actionCreators";
 import {GeneralSelector} from "../../../store/selectors/GeneralSelector";
 import {ViewPointSettings} from "../../../settings/ViewPointSettings";
 import {ImageButton} from "../../Common/ImageButton/ImageButton";
@@ -18,11 +18,21 @@ import {AIActions} from "../../../logic/actions/AIActions";
 interface IProps {
     activeContext: ContextType;
     updateImageDragModeStatus: (imageDragMode: boolean) => any;
+    updateCrossHairVisibleStatus: (crossHairVisible: boolean) => any;
     imageDragMode: boolean;
+    crossHairVisible: boolean;
     activeLabelType: LabelType;
 }
 
-const EditorTopNavigationBar: React.FC<IProps> = ({activeContext, updateImageDragModeStatus, imageDragMode, activeLabelType}) => {
+const EditorTopNavigationBar: React.FC<IProps> = (
+    {
+        activeContext,
+        updateImageDragModeStatus,
+        updateCrossHairVisibleStatus,
+        imageDragMode,
+        crossHairVisible,
+        activeLabelType
+    }) => {
     const buttonSize: ISize = {width: 30, height: 30};
     const buttonPadding: number = 10;
 
@@ -43,6 +53,10 @@ const EditorTopNavigationBar: React.FC<IProps> = ({activeContext, updateImageDra
             updateImageDragModeStatus(!imageDragMode);
         }
     };
+
+    const crossHairOnClick = () => {
+        updateCrossHairVisibleStatus(!crossHairVisible);
+    }
 
     return (
         <div className={getClassName()}>
@@ -85,18 +99,23 @@ const EditorTopNavigationBar: React.FC<IProps> = ({activeContext, updateImageDra
                     onClick={imageDragOnClick}
                     isActive={imageDragMode}
                 />
+                <ImageButton
+                    image={"ico/cross-hair.png"}
+                    imageAlt={"cross-hair"}
+                    buttonSize={buttonSize}
+                    padding={buttonPadding}
+                    onClick={crossHairOnClick}
+                    isActive={crossHairVisible}
+                />
             </div>
-            {((activeLabelType === LabelType.RECTANGLE && AISelector.isAIObjectDetectorModelLoaded()) ||
+            {((activeLabelType === LabelType.RECT && AISelector.isAIObjectDetectorModelLoaded()) ||
                 (activeLabelType === LabelType.POINT && AISelector.isAIPoseDetectorModelLoaded())) && <div className="ButtonWrapper">
                 <ImageButton
                     image={"ico/accept-all.png"}
                     imageAlt={"accept-all"}
                     buttonSize={buttonSize}
                     padding={buttonPadding}
-                    onClick={() => {
-                        console.log("click");
-                        AIActions.acceptAllSuggestedLabels(LabelsSelector.getActiveImageData())
-                    }}
+                    onClick={() => AIActions.acceptAllSuggestedLabels(LabelsSelector.getActiveImageData())}
                 />
                 <ImageButton
                     image={"ico/reject-all.png"}
@@ -111,12 +130,14 @@ const EditorTopNavigationBar: React.FC<IProps> = ({activeContext, updateImageDra
 };
 
 const mapDispatchToProps = {
-    updateImageDragModeStatus
+    updateImageDragModeStatus,
+    updateCrossHairVisibleStatus
 };
 
 const mapStateToProps = (state: AppState) => ({
     activeContext: state.general.activeContext,
     imageDragMode: state.general.imageDragMode,
+    crossHairVisible: state.general.crossHairVisible,
     activeLabelType: state.labels.activeLabelType
 });
 

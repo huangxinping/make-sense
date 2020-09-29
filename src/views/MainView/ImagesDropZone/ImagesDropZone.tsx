@@ -1,17 +1,17 @@
 import React from "react";
 import './ImagesDropZone.scss';
-import {useDropzone} from "react-dropzone";
+import {useDropzone,DropzoneOptions} from "react-dropzone";
 import {TextButton} from "../../Common/TextButton/TextButton";
 import {ImageData} from "../../../store/labels/types";
 import {connect} from "react-redux";
 import {addImageData, updateActiveImageIndex} from "../../../store/labels/actionCreators";
 import {AppState} from "../../../store";
 import {ProjectType} from "../../../data/enums/ProjectType";
-import {FileUtil} from "../../../utils/FileUtil";
 import {PopupWindowType} from "../../../data/enums/PopupWindowType";
 import {updateActivePopupType, updateProjectData} from "../../../store/general/actionCreators";
 import {AcceptedFileType} from "../../../data/enums/AcceptedFileType";
 import {ProjectData} from "../../../store/general/types";
+import {ImageDataUtil} from "../../../utils/ImageDataUtil";
 
 interface IProps {
     updateActiveImageIndex: (activeImageIndex: number) => any;
@@ -24,7 +24,7 @@ interface IProps {
 const ImagesDropZone: React.FC<IProps> = ({updateActiveImageIndex, addImageData, updateProjectData, updateActivePopupType, projectData}) => {
     const {acceptedFiles, getRootProps, getInputProps} = useDropzone({
         accept: AcceptedFileType.IMAGE
-    });
+    } as DropzoneOptions);
 
     const startEditor = (projectType: ProjectType) => {
         if (acceptedFiles.length > 0) {
@@ -33,7 +33,7 @@ const ImagesDropZone: React.FC<IProps> = ({updateActiveImageIndex, addImageData,
                 type: projectType
             });
             updateActiveImageIndex(0);
-            addImageData(acceptedFiles.map((fileData:File) => FileUtil.mapFileDataToImageData(fileData)));
+            addImageData(acceptedFiles.map((fileData:File) => ImageDataUtil.createImageDataFromFileData(fileData)));
             updateActivePopupType(PopupWindowType.INSERT_LABEL_NAMES);
         }
     };
@@ -45,9 +45,9 @@ const ImagesDropZone: React.FC<IProps> = ({updateActiveImageIndex, addImageData,
                 <img
                     draggable={false}
                     alt={"upload"}
-                    src={"img/box-opened.png"}
+                    src={"ico/box-opened.png"}
                 />
-                <p className="extraBold">Drop some images</p>
+                <p className="extraBold">Drop images</p>
                 <p>or</p>
                 <p className="extraBold">Click here to select them</p>
             </>;
@@ -56,7 +56,7 @@ const ImagesDropZone: React.FC<IProps> = ({updateActiveImageIndex, addImageData,
                 <img
                     draggable={false}
                     alt={"uploaded"}
-                    src={"img/box-closed.png"}
+                    src={"ico/box-closed.png"}
                 />
                 <p className="extraBold">1 image loaded</p>
             </>;
@@ -67,7 +67,7 @@ const ImagesDropZone: React.FC<IProps> = ({updateActiveImageIndex, addImageData,
                     draggable={false}
                     key={1}
                     alt={"uploaded"}
-                    src={"img/box-closed.png"}
+                    src={"ico/box-closed.png"}
                 />
                 <p key={2} className="extraBold">{acceptedFiles.length} images loaded</p>
             </>;
@@ -80,14 +80,14 @@ const ImagesDropZone: React.FC<IProps> = ({updateActiveImageIndex, addImageData,
             </div>
             <div className="DropZoneButtons">
                 <TextButton
-                    label={"Image recognition"}
-                    isDisabled={true}
-                    onClick={() => {}}
-                />
-                <TextButton
                     label={"Object Detection"}
                     isDisabled={!acceptedFiles.length}
                     onClick={() => startEditor(ProjectType.OBJECT_DETECTION)}
+                />
+                <TextButton
+                    label={"Image recognition"}
+                    isDisabled={!acceptedFiles.length}
+                    onClick={() => startEditor(ProjectType.IMAGE_RECOGNITION)}
                 />
             </div>
         </div>

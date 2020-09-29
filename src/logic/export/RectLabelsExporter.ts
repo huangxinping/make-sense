@@ -1,4 +1,4 @@
-import {ExportFormatType} from "../../data/enums/ExportFormatType";
+import {AnnotationFormatType} from "../../data/enums/AnnotationFormatType";
 import {ImageData, LabelName, LabelRect} from "../../store/labels/types";
 import {ImageRepository} from "../imageRepository/ImageRepository";
 import JSZip from 'jszip';
@@ -10,15 +10,15 @@ import {GeneralSelector} from "../../store/selectors/GeneralSelector";
 import {findIndex, findLast} from "lodash";
 
 export class RectLabelsExporter {
-    public static export(exportFormatType: ExportFormatType): void {
+    public static export(exportFormatType: AnnotationFormatType): void {
         switch (exportFormatType) {
-            case ExportFormatType.YOLO:
+            case AnnotationFormatType.YOLO:
                 RectLabelsExporter.exportAsYOLO();
                 break;
-            case ExportFormatType.VOC:
+            case AnnotationFormatType.VOC:
                 RectLabelsExporter.exportAsVOC();
                 break;
-            case ExportFormatType.CSV:
+            case AnnotationFormatType.CSV:
                 RectLabelsExporter.exportAsCSV();
                 break;
             default:
@@ -63,10 +63,10 @@ export class RectLabelsExporter {
         const labelRectsString: string[] = imageData.labelRects.map((labelRect: LabelRect) => {
             const labelFields = [
                 findIndex(labelNames, {id: labelRect.labelId}).toString(),
-                ((labelRect.rect.x + labelRect.rect.width / 2) / image.width).toFixed(6) + "",
-                ((labelRect.rect.y + labelRect.rect.height / 2) / image.height).toFixed(6) + "",
-                (labelRect.rect.width / image.width).toFixed(6) + "",
-                (labelRect.rect.height / image.height).toFixed(6) + ""
+                ((labelRect.rect.x + labelRect.rect.width / 2) / image.width).toFixed(6).toString(),
+                ((labelRect.rect.y + labelRect.rect.height / 2) / image.height).toFixed(6).toString(),
+                (labelRect.rect.width / image.width).toFixed(6).toString(),
+                (labelRect.rect.height / image.height).toFixed(6).toString()
             ];
             return labelFields.join(" ")
         });
@@ -159,14 +159,8 @@ export class RectLabelsExporter {
             .filter((imageLabelData: string) => {
                 return !!imageLabelData})
             .join("\n");
-
-        const blob = new Blob([content], {type: "text/plain;charset=utf-8"});
-        try {
-            saveAs(blob, `${ExporterUtil.getExportFileName()}.csv`);
-        } catch (error) {
-            // TODO
-            throw new Error(error);
-        }
+        const fileName: string = `${ExporterUtil.getExportFileName()}.csv`;
+        ExporterUtil.saveAs(content, fileName);
     }
 
     private static wrapRectLabelsIntoCSV(imageData: ImageData): string {
@@ -179,13 +173,13 @@ export class RectLabelsExporter {
             const labelName: LabelName = findLast(labelNames, {id: labelRect.labelId});
             const labelFields = !!labelName ? [
                 labelName.name,
-                Math.round(labelRect.rect.x) + "",
-                Math.round(labelRect.rect.y) + "",
-                Math.round(labelRect.rect.width) + "",
-                Math.round(labelRect.rect.height) + "",
+                Math.round(labelRect.rect.x).toString(),
+                Math.round(labelRect.rect.y).toString(),
+                Math.round(labelRect.rect.width).toString(),
+                Math.round(labelRect.rect.height).toString(),
                 imageData.fileData.name,
-                image.width + "",
-                image.height + ""
+                image.width.toString(),
+                image.height.toString()
             ] : [];
             return labelFields.join(",")
         });

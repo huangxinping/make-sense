@@ -9,24 +9,32 @@ import {connect} from "react-redux";
 import Scrollbars from 'react-custom-scrollbars';
 import TextInput from "../../Common/TextInput/TextInput";
 import {ImageButton} from "../../Common/ImageButton/ImageButton";
-import uuidv1 from 'uuid/v1';
+import uuidv4 from 'uuid/v4';
 import {LabelName} from "../../../store/labels/types";
 import {LabelUtil} from "../../../utils/LabelUtil";
 import {LabelsSelector} from "../../../store/selectors/LabelsSelector";
 import {LabelActions} from "../../../logic/actions/LabelActions";
+import {ProjectType} from "../../../data/enums/ProjectType";
 
 interface IProps {
+    projectType: ProjectType;
     updateActivePopupType: (activePopupType: PopupWindowType) => any;
     updateLabelNames: (labels: LabelName[]) => any;
     isUpdate: boolean;
 }
 
-const InsertLabelNamesPopup: React.FC<IProps> = ({updateActivePopupType, updateLabelNames, isUpdate}) => {
+const InsertLabelNamesPopup: React.FC<IProps> = (
+    {
+        projectType,
+        updateActivePopupType,
+        updateLabelNames,
+        isUpdate
+    }) => {
     const initialLabels = LabelUtil.convertLabelNamesListToMap(LabelsSelector.getLabelNames());
     const [labelNames, setLabelNames] = useState(initialLabels);
 
     const addHandle = () => {
-        const newLabelNames = {...labelNames, [uuidv1()]: ""};
+        const newLabelNames = {...labelNames, [uuidv4()]: ""};
         setLabelNames(newLabelNames);
     };
 
@@ -64,7 +72,7 @@ const InsertLabelNamesPopup: React.FC<IProps> = ({updateActivePopupType, updateL
         if (labelNamesList.length > 0) {
             updateLabelNames(LabelUtil.convertMapToLabelNamesList(labelNames));
         }
-        updateActivePopupType(PopupWindowType.LOAD_AI_MODEL);
+        updateActivePopupType(null);
     };
 
     const onUpdateAccept = () => {
@@ -106,11 +114,11 @@ const InsertLabelNamesPopup: React.FC<IProps> = ({updateActivePopupType, updateL
                 <div className="Message">
                     {
                         isUpdate ?
-                        "You can now edit the label names you use to describe the objects in the photos. " :
-                        "Before you start, you can create a list of labels you would like to use in your project. " +
-                            "You can also load labels list from a file or create it along the way."
+                        "You can now edit the label names you use to describe the objects in the photos. Use the + " +
+                        "button to add a new empty text field." :
+                        "Before you start, you can create a list of labels you plan to assign to objects in your " +
+                        "project. You can also choose to skip that part for now and define label names as you go."
                     }
-                    Use the + button to add a new empty text field.
                 </div>
                 <div className="LabelsContainer">
                     {Object.keys(labelNames).length !== 0 ? <Scrollbars>
@@ -127,7 +135,7 @@ const InsertLabelNamesPopup: React.FC<IProps> = ({updateActivePopupType, updateL
                         <img
                             draggable={false}
                             alt={"upload"}
-                            src={"img/type-writer.png"}
+                            src={"ico/type-writer.png"}
                         />
                         <p className="extraBold">Your label list is empty</p>
                     </div>}
@@ -138,7 +146,7 @@ const InsertLabelNamesPopup: React.FC<IProps> = ({updateActivePopupType, updateL
 
     return(
         <GenericYesNoPopup
-            title={isUpdate ? "Edit label names list" : "Create label names list"}
+            title={isUpdate ? "Edit labels" : "Create labels"}
             renderContent={renderContent}
             acceptLabel={isUpdate ? "Accept" : "Start project"}
             onAccept={isUpdate ? onUpdateAccept : onCreateAccept}
@@ -152,7 +160,9 @@ const mapDispatchToProps = {
     updateLabelNames
 };
 
-const mapStateToProps = (state: AppState) => ({});
+const mapStateToProps = (state: AppState) => ({
+    projectType: state.general.projectData.type
+});
 
 export default connect(
     mapStateToProps,

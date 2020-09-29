@@ -1,6 +1,7 @@
 export enum LabelType {
-    NAME = "NAME",
+    IMAGE_RECOGNITION = "IMAGE RECOGNITION",
     POINT = "POINT",
-    RECTANGLE = "RECTANGLE",
-    POLYGON = "POLYGON"
+    RECT = "RECT",
+    POLYGON = "POLYGON",
+    LINE = "LINE"
 }

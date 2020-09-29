@@ -11,7 +11,6 @@ import {DrawUtil} from "../../utils/DrawUtil";
 import {IRect} from "../../interfaces/IRect";
 import {ImageData, LabelPolygon} from "../../store/labels/types";
 import {LabelsSelector} from "../../store/selectors/LabelsSelector";
-import uuidv1 from 'uuid/v1';
 import {
     updateActiveLabelId,
     updateFirstLabelCreatedFlag,
@@ -25,6 +24,8 @@ import {RenderEngineUtil} from "../../utils/RenderEngineUtil";
 import {LabelType} from "../../data/enums/LabelType";
 import {EditorActions} from "../actions/EditorActions";
 import {GeneralSelector} from "../../store/selectors/GeneralSelector";
+import {Settings} from "../../settings/Settings";
+import {LabelUtil} from "../../utils/LabelUtil";
 
 export class PolygonRenderEngine extends BaseRenderEngine {
     private config: RenderEngineConfig = new RenderEngineConfig();
@@ -69,7 +70,8 @@ export class PolygonRenderEngine extends BaseRenderEngine {
         const isMouseOverCanvas: boolean = RenderEngineUtil.isMouseOverCanvas(data);
         if (isMouseOverCanvas) {
             if (this.isCreationInProgress()) {
-                const isMouseOverStartAnchor: boolean = this.isMouseOverAnchor(data.mousePositionOnViewPortContent, this.activePath[0]);
+                const isMouseOverStartAnchor: boolean = RenderEngineUtil.isMouseOverAnchor(
+                    data.mousePositionOnViewPortContent, this.activePath[0], this.config.anchorSize);
                 if (isMouseOverStartAnchor) {
                     this.addLabelAndFinishCreation(data);
                 } else  {
@@ -123,7 +125,12 @@ export class PolygonRenderEngine extends BaseRenderEngine {
                     const linesOnCanvas: ILine[] = this.mapPointsToLines(pathOnCanvas.concat(pathOnCanvas[0]));
 
                     for (let j = 0; j < linesOnCanvas.length; j++) {
-                        if (this.isMouseOverLine(data.mousePositionOnViewPortContent, linesOnCanvas[j])) {
+                        const mouseOverLine = RenderEngineUtil.isMouseOverLine(
+                            data.mousePositionOnViewPortContent,
+                            linesOnCanvas[j],
+                            this.config.anchorHoverSize.width / 2
+                        )
+                        if (mouseOverLine) {
                             this.suggestedAnchorPositionOnCanvas = LineUtil.getCenter(linesOnCanvas[j]);
                             this.suggestedAnchorIndexInPolygon = j + 1;
                             break;
@@ -193,8 +200,8 @@ export class PolygonRenderEngine extends BaseRenderEngine {
         lines.forEach((line: ILine) => {
             DrawUtil.drawLine(this.canvas, line.start, line.end, this.config.lineActiveColor, this.config.lineThickness);
         });
-        this.mapPointsToAnchors(standardizedPoints).forEach((handleRect: IRect) => {
-            DrawUtil.drawRectWithFill(this.canvas, handleRect, this.config.activeAnchorColor);
+        standardizedPoints.forEach((point: IPoint) => {
+            DrawUtil.drawCircleWithFill(this.canvas, point, Settings.RESIZE_HANDLE_DIMENSION_PX/2, this.config.activeAnchorColor);
         })
     }
 
@@ -230,8 +237,8 @@ export class PolygonRenderEngine extends BaseRenderEngine {
         }
         DrawUtil.drawPolygon(this.canvas, standardizedPoints, color, this.config.lineThickness);
         if (isActive) {
-            this.mapPointsToAnchors(standardizedPoints).forEach((handleRect: IRect) => {
-                DrawUtil.drawRectWithFill(this.canvas, handleRect, this.config.activeAnchorColor);
+            standardizedPoints.forEach((point: IPoint) => {
+                DrawUtil.drawCircleWithFill(this.canvas, point, Settings.RESIZE_HANDLE_DIMENSION_PX/2, this.config.activeAnchorColor);
             })
         }
     }
@@ -243,8 +250,8 @@ export class PolygonRenderEngine extends BaseRenderEngine {
             const isMouseOverSuggestedAnchor: boolean = RectUtil.isPointInside(suggestedAnchorRect, data.mousePositionOnViewPortContent);
 
             if (isMouseOverSuggestedAnchor) {
-                const handleRect = RectUtil.getRectWithCenterAndSize(this.suggestedAnchorPositionOnCanvas, this.config.anchorSize);
-                DrawUtil.drawRectWithFill(this.canvas, handleRect, this.config.lineInactiveColor);
+                DrawUtil.drawCircleWithFill(
+                    this.canvas, this.suggestedAnchorPositionOnCanvas, Settings.RESIZE_HANDLE_DIMENSION_PX/2, this.config.lineInactiveColor);
             }
         }
     }
@@ -288,11 +295,7 @@ export class PolygonRenderEngine extends BaseRenderEngine {
     private addPolygonLabel(polygon: IPoint[]) {
         const activeLabelId = LabelsSelector.getActiveLabelNameId();
         const imageData: ImageData = LabelsSelector.getActiveImageData();
-        const labelPolygon: LabelPolygon = {
-            id: uuidv1(),
-            labelId: activeLabelId,
-            vertices: polygon
-        };
+        const labelPolygon: LabelPolygon = LabelUtil.createLabelPolygon(activeLabelId, polygon);
         imageData.labelPolygons.push(labelPolygon);
         store.dispatch(updateImageDataById(imageData.id, imageData));
         store.dispatch(updateFirstLabelCreatedFlag(true));
@@ -396,18 +399,6 @@ export class PolygonRenderEngine extends BaseRenderEngine {
         return RectUtil.isPointInside(RectUtil.getRectWithCenterAndSize(anchor, this.config.anchorSize), mouse);
     }
 
-    private isMouseOverLine(mouse: IPoint, l: ILine): boolean {
-        const hoverReach: number = this.config.anchorHoverSize.width / 2;
-        const minX: number = Math.min(l.start.x, l.end.x);
-        const maxX: number = Math.max(l.start.x, l.end.x);
-        const minY: number = Math.min(l.start.y, l.end.y);
-        const maxY: number = Math.max(l.start.y, l.end.y);
-
-        return (minX - hoverReach <= mouse.x && maxX + hoverReach >= mouse.x) &&
-            (minY - hoverReach <= mouse.y && maxY + hoverReach >= mouse.y) &&
-            LineUtil.getDistanceFromLine(l, mouse) < hoverReach;
-    }
-
     // =================================================================================================================
     // MAPPERS
     // =================================================================================================================
@@ -418,10 +409,6 @@ export class PolygonRenderEngine extends BaseRenderEngine {
             lines.push({start: points[i], end: points[i + 1]})
         }
         return lines;
-    }
-
-    private mapPointsToAnchors(points: IPoint[]): IRect[] {
-        return points.map((point: IPoint) => RectUtil.getRectWithCenterAndSize(point, this.config.anchorSize));
     }
 
     // =================================================================================================================
@@ -435,7 +422,12 @@ export class PolygonRenderEngine extends BaseRenderEngine {
             const linesOnCanvas: ILine[] = this.mapPointsToLines(pathOnCanvas.concat(pathOnCanvas[0]));
 
             for (let j = 0; j < linesOnCanvas.length; j++) {
-                if (this.isMouseOverLine(data.mousePositionOnViewPortContent, linesOnCanvas[j]))
+                const mouseOverLine = RenderEngineUtil.isMouseOverLine(
+                    data.mousePositionOnViewPortContent,
+                    linesOnCanvas[j],
+                    this.config.anchorHoverSize.width / 2
+                )
+                if (mouseOverLine)
                     return labelPolygons[i];
             }
             for (let j = 0; j < pathOnCanvas.length; j ++) {
